@@ -16,7 +16,7 @@
 #define P_HEADERLEN(pane) (P_MAXX(pane) - P_MINX(pane) - 1)
 #define P_HEIGHT(pane) (P_MAXY(pane) - P_MINY(pane))
 
-#define INFOSTR "F1-Help F10-Quit"
+#define INFOSTR "F10-Quit"
 
 static struct fm_pane *lpane;
 static struct fm_pane *rpane;
