@@ -1,12 +1,13 @@
 #include "fm_ui.h"
 #include "fm_dir.h"
 #include "rc.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <limits.h>
-#include <unistd.h> 
-#include <string.h>
 #include <libgen.h>
+#include <limits.h>
+#include <string.h>
+#include <unistd.h>
 
 #define P_MINY(pane) (getbegy(pane->win) + 1)
 #define P_MAXY(pane) (getmaxy(pane->win) - 2)
@@ -29,8 +30,6 @@ static void display_fm_pane(struct fm_pane * pane);
 static WINDOW * create_lpane_win();
 static WINDOW * create_rpane_win();
 static WINDOW * create_info_win();
-
-static inline struct fm_pane * get_apane(void);
 
 struct fm_pane* create_fm_pane(void) {
 	struct fm_pane *pane = calloc(1, sizeof(struct fm_pane));
@@ -96,49 +95,6 @@ void mv_cur_up(void) {
 		pane->top = pane->cur;
 	}
 
-}
-
-int open_file(void) {
-	int ret = 0;
-
-	struct fm_pane *pane = get_apane();
-	struct fm_file *fmfile = pane->dir->files + pane->cur;
-
-	if (fmfile->is_dir) {
-		char *newpath = NULL;
-		char *fname   = fmfile->name;
-		char *dir     = pane->dir->path;
-
-		if (strcmp(fname, "..") == 0) {
-			newpath = strdup(dir);
-			dirname(newpath);
-		}
-		else {
-			newpath = malloc(strlen(dir) + strlen("/") 
-		                         + strlen(fname) + 1 );
-		        if (strcmp(dir, "/") == 0) {
-				sprintf(newpath, "%s%s", dir, fname);
-			}
-			else {
-				sprintf(newpath, "%s%s%s", dir, "/", fname);
-			}
-		}
-
-		if (access(newpath, R_OK) == 0) {
-			destroy_fm_dir(pane->dir);
-			pane->dir = NULL;
-			pane->dir = create_fm_dir(newpath);
-			pane->cur=0;
-			pane->top=0;
-                }
-                else {
-                	ret = -1;
-                }
-
-		free(newpath);
-	}
-
-	return ret;
 }
 
 void display_fm_pane(struct fm_pane * pane) {
@@ -305,7 +261,47 @@ void mv_end(void) {
 	}
 }
 
-static inline struct fm_pane * get_apane(void) {
+struct fm_pane * get_apane(void) {
 	return lpane->active ? lpane : rpane;
+}
+
+struct fm_file * get_afile(void) {
+	struct fm_pane *pane = get_apane();
+	return pane->dir->files + pane->cur;
+}
+
+struct fm_dir * get_adir(void) {
+	struct fm_pane *pane = get_apane();
+	return pane->dir;
+}
+
+char * get_adir_fpath(void) {
+	struct fm_dir *fmdir = get_adir();
+	return fmdir->path;
+}
+
+char * get_afile_fpath(void) {
+	char *path = NULL;
+
+	struct fm_file *fmfile = get_afile();
+	char *fname = fmfile->name;
+	char *dir = get_adir_fpath();
+
+	if (fmfile->is_dir && (strcmp(fname, "..") == 0)) {
+		path = strdup(dir);
+		dirname(path);
+	}
+	else {
+		// + 1 for '/', + 1 for '\0'
+		path = malloc(strlen(dir) + 1 + strlen(fname) + 1); 
+		if (strcmp(dir, "/") == 0) {
+			sprintf(path, "%s%s", dir, fname);
+		}
+		else {
+			sprintf(path, "%s%s%s", dir, "/", fname);
+		}
+	}
+
+	return path;
 }
 

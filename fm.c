@@ -1,11 +1,11 @@
 #include "fm.h"
+#include "fm_action.h"
 #include "fm_ui.h"
 #include "rc.h"
 
 #include <locale.h>
-#include <signal.h>
-#include <stdbool.h>
 #include <ncurses.h>
+#include <signal.h>
 
 static bool fm_term_resize;
 
@@ -47,48 +47,48 @@ void fm_end(void) {
 
 void fm_run(void) {
 	int ch = 0;
-	for (;;) {
+	bool inloop = true;
+	while(inloop) {
 		signal(SIGWINCH, sh_sigwinch); 
 		if (fm_term_resize) {
 			fm_ui_reset();
 			fm_term_resize = false;
 		}
-
 		fm_ui_display();
 
-		if ((ch = getch()) == ERR) { 
-			continue;
-		}
-
-		if (KEY_F(10) == ch) {
+		switch( ch = getch() ) {
+		case KEY_F(10):
+			inloop = false;
 			break;
-		}
-		else if (KEY_DOWN == ch) {
+		case KEY_DOWN:
 			mv_cur_down();
-		}
-		else if (KEY_UP == ch) {
+			break;
+		case KEY_UP:
 			mv_cur_up();
-		}
-		else if (KEY_NPAGE == ch) {
+			break;
+		case KEY_NPAGE:
 			mv_pgdown();
-		}
-		else if (KEY_PPAGE == ch) {
+			break;
+		case KEY_PPAGE:
 			mv_pgup();
-		}
-		else if (KEY_HOME == ch) {
+			break;
+		case KEY_HOME:
 			mv_home();
-		}
-		else if (KEY_END == ch) {
+			break;
+		case KEY_END:
 			mv_end();
-		}
-		else if ('\t' == ch) {
+			break;
+		case '\t':
 			switch_pane();
-		}
-		else if ('\n' == ch) {
+			break;
+		case '\n':
 			if (open_file() != SUCCESS) {
 				msg_rev("Could not open");
 				getch();
 			}
+			break;
+		default:
+			;
 		}
 	}
 }

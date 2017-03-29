@@ -15,7 +15,6 @@ struct fm_pane {
 void switch_pane(void);
 void mv_cur_down(void);
 void mv_cur_up(void);
-int open_file(void);
 void msg(char const * msg);
 void msg_rev(char const * msg);
 void fm_ui_reset(void);
@@ -26,5 +25,10 @@ void mv_pgdown(void);
 void mv_pgup(void);
 void mv_home(void);
 void mv_end(void);
+struct fm_pane * get_apane(void);
+struct fm_file * get_afile(void);
+struct fm_dir * get_adir(void);
+char * get_adir_fpath(void);
+char * get_afile_fpath(void);
 
 #endif

@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 
 static size_t count_files(char const *path);
 static int file_cmp(const void *a, const void *b);
@@ -88,23 +87,33 @@ struct fm_dir* create_fm_dir(char const *path) {
 			continue;
 		}
 
-		struct stat st = {0};
-                fstatat( dirfd(dir), entry->d_name, &st, AT_SYMLINK_NOFOLLOW); 
-		
 		fmfiles[i].name = strdup(entry->d_name);
 		if (!fmfiles[i].name) {
 			goto error;
 		}
 
+		struct stat st = {0};
+		// last parameter can be 0 or AT_SYMLINK_NOFOLLOW, 
+		// which makes it act like stat() or lstat() respectively
+                fstatat( dirfd(dir), entry->d_name, &st, 0); 
+
 		fmfiles[i].size = st.st_size; 
-		if(S_ISDIR(st.st_mode)) {
-			fmfiles[i].is_dir = true;
-		}
-		else if(S_ISLNK(st.st_mode)) {
-			fmfiles[i].is_slink = true;
-		}
-		else if(S_ISREG(st.st_mode)) {
-			fmfiles[i].is_reg = true;
+
+		if (st.st_mode) {
+			if(S_ISDIR(st.st_mode)) {
+				fmfiles[i].is_dir = true;
+			}
+			else if(st.st_mode & S_IXUSR) {
+				fmfiles[i].is_exec = true;
+			}
+
+			if(S_ISREG(st.st_mode)) {
+				fmfiles[i].is_reg = true;
+			}
+
+			if(S_ISLNK(st.st_mode)) {
+				fmfiles[i].is_slink = true;
+			}
 		}
 		
  	 	i++; 

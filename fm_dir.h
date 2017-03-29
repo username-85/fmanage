@@ -13,6 +13,7 @@ struct fm_dir {
 struct fm_file {
 	char *name;
 	bool is_dir;
+	bool is_exec;
 	bool is_reg;
 	bool is_slink;
 	int size;
