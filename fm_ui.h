@@ -28,7 +28,13 @@ void mv_end(void);
 struct fm_pane * get_apane(void);
 struct fm_file * get_afile(void);
 struct fm_dir * get_adir(void);
+
+// return ponter to string with fullpath to active directory
+// memory for string allocated on heap
 char * get_adir_fpath(void);
+
+// return ponter to string with fullpath to active file(file under cursor)
+// memory for string allocated on heap
 char * get_afile_fpath(void);
 
 #endif
