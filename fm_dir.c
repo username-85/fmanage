@@ -8,89 +8,34 @@ static size_t count_files(char const *path);
 static int file_cmp(const void *a, const void *b);
 static void destroy_fm_files(struct fm_dir *dir);
 
-size_t count_files(char const *path) {
-	DIR *dir = opendir(path);
-	if (!dir) {
-		return 0;
-	}
-
-	size_t ret = 0;
-	struct dirent *entry;
-	while ( (entry = readdir(dir)) ) {
-		if (!strcmp(entry->d_name, ".")) { 
-			continue;
-		}
-		ret++;
-	}
-	closedir(dir);
-	return ret;
-}
-
-int file_cmp(void const *a, void const *b) {
-	struct fm_file *filea = (struct fm_file *)a;
-	struct fm_file *fileb = (struct fm_file *)b;
-
-	int rv = -(filea->is_dir - fileb->is_dir);
-	if (rv == 0) rv = strcmp(filea->name, fileb->name);
-	return rv;
-}
-
-void destroy_fm_dir(struct fm_dir *dir) {
-	if (!dir) {
-		return;
-	}
-	destroy_fm_files(dir);
-	free(dir->path);
-	free(dir);
-}
-
-void destroy_fm_files(struct fm_dir *dir) {
-	if (!dir) {
-		return;
-	}
-
-	if (dir->files) {
-		for (int i = 0; i < dir->files_num; i++) {
-			if (dir->files[i].name) {
-				free(dir->files[i].name);
-			}
-		}
-		free(dir->files);
-	}
-}
-
-struct fm_dir* create_fm_dir(char const *path) {
+struct fm_dir* create_fm_dir(char const *path)
+{
 	struct fm_dir *fmdir = calloc(1, sizeof(struct fm_dir));
-	if (!fmdir) {
+	if (!fmdir) 
 		goto error;
-	}
 
 	int files_num = count_files(path);
 	struct fm_file *fmfiles = calloc(files_num, sizeof(struct fm_file));
-	if (!fmfiles) {
+	if (!files_num || !fmfiles)
 		goto error;
-	}
+
 	fmdir->files = fmfiles;
 	fmdir->files_num = files_num;
-
 	fmdir->path = strdup(path);
-	if (!fmdir->path) {
+	if (!fmdir->path)
 		goto error;
-	}
 
 	DIR *dir = opendir(path);
 	struct dirent *entry;
 	int i = 0;
 	while( (entry = readdir(dir)) && i < files_num ) {
 
-		if (!strcmp(entry->d_name, ".")) { 
+		if (!strcmp(entry->d_name, "."))
 			continue;
-		}
 
 		fmfiles[i].name = strdup(entry->d_name);
-		if (!fmfiles[i].name) {
+		if (!fmfiles[i].name)
 			goto error;
-		}
 
 		struct stat st = {0};
 		// last parameter can be 0 or AT_SYMLINK_NOFOLLOW, 
@@ -100,20 +45,16 @@ struct fm_dir* create_fm_dir(char const *path) {
 		fmfiles[i].size = st.st_size; 
 
 		if (st.st_mode) {
-			if(S_ISDIR(st.st_mode)) {
+			if (S_ISDIR(st.st_mode))
 				fmfiles[i].is_dir = true;
-			}
-			else if(st.st_mode & S_IXUSR) {
+			else if (st.st_mode & S_IXUSR)
 				fmfiles[i].is_exec = true;
-			}
 
-			if(S_ISREG(st.st_mode)) {
+			if (S_ISREG(st.st_mode))
 				fmfiles[i].is_reg = true;
-			}
 
-			if(S_ISLNK(st.st_mode)) {
+			if (S_ISLNK(st.st_mode))
 				fmfiles[i].is_slink = true;
-			}
 		}
 		
  	 	i++; 
@@ -129,4 +70,72 @@ error:
 	destroy_fm_dir(fmdir);
 	return NULL;
 }
+
+void destroy_fm_dir(struct fm_dir *dir)
+{
+	if (!dir)
+		return;
+
+	destroy_fm_files(dir);
+	free(dir->path);
+	free(dir);
+}
+
+struct fm_dir* reload_fm_dir(struct fm_dir *dir)
+{
+	if (!dir) return NULL;
+
+	char *dir_path = dir->path;
+	if (!dir->path || !strlen(dir->path)) return NULL;
+
+	struct fm_dir *new_dir = create_fm_dir(dir_path);
+	if (!new_dir) return NULL;
+	
+	destroy_fm_dir(dir);
+	return new_dir;
+}
+
+static size_t count_files(char const *path)
+{
+	DIR *dir = opendir(path);
+	if (!dir)
+		return 0;
+
+	size_t ret = 0;
+	struct dirent *entry;
+	while ( (entry = readdir(dir)) ) {
+		if (!strcmp(entry->d_name, "."))
+			continue;
+		ret++;
+	}
+	closedir(dir);
+	return ret;
+}
+
+static void destroy_fm_files(struct fm_dir *dir)
+{
+	if (!dir)
+		return;
+
+	if (dir->files) {
+		for (int i = 0; i < dir->files_num; i++) {
+			if (dir->files[i].name)
+				free(dir->files[i].name);
+		}
+		free(dir->files);
+	}
+}
+
+static int file_cmp(void const *a, void const *b)
+{
+	struct fm_file *filea = (struct fm_file *)a;
+	struct fm_file *fileb = (struct fm_file *)b;
+
+	int rv = -(filea->is_dir - fileb->is_dir);
+	if (rv == 0) 
+		rv = strcmp(filea->name, fileb->name);
+
+	return rv;
+}
+
 

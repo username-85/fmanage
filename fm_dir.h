@@ -21,5 +21,6 @@ struct fm_file {
 
 void destroy_fm_dir(struct fm_dir *dir);
 struct fm_dir* create_fm_dir(char const *path);
+struct fm_dir* reload_fm_dir(struct fm_dir *dir);
 
 #endif

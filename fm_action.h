@@ -1,6 +1,7 @@
 #ifndef FM_ACTION_H
 #define FM_ACTION_H
 
-int open_file(void);
+int fm_open(void);
+void fm_copy(void);
 
 #endif
